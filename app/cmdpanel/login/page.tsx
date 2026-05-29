@@ -81,29 +81,26 @@ export default function AdminLogin() {
   const [totpCode, setTotpCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [authUrl, setAuthUrl] = useState('')
   const [tempToken, setTempToken] = useState('')
 
   useEffect(() => {
     setTempToken(searchParams.get('token') || '')
     if (searchParams.get('step') === 'totp') setStep('totp')
     const err = searchParams.get('error')
-    if (err) setError('Something went wrong')
+    if (err) {
+      const messages: Record<string, string> = {
+        unauthorized: 'This Google account is not authorized. Use the admin email.',
+        audience: 'OAuth client mismatch. Contact admin.',
+        token_exchange: 'Google token exchange failed. Try again.',
+        invalid_token: 'Invalid Google token. Try again.',
+        config: 'Server configuration error.',
+        missing_code: 'Missing authorization code.',
+        server_error: 'Server error. Try again.',
+        access_denied: 'Access denied by Google.',
+      }
+      setError(messages[err] || `Error: ${err}`)
+    }
   }, [searchParams])
-
-  useEffect(() => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!
-    const redirectUri = `${window.location.origin}/api/auth/callback`
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      scope: 'openid email profile',
-      access_type: 'online',
-      prompt: 'consent',
-    })
-    setAuthUrl(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
-  }, [])
 
   async function handleTotpSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -135,7 +132,20 @@ export default function AdminLogin() {
           <>
             <h1 style={headingStyle}>Admin Access</h1>
             <p style={subStyle}>Sign in with your Google account</p>
-            <a href={authUrl} style={{ ...btnStyle, pointerEvents: authUrl ? 'auto' : 'none', opacity: authUrl ? 1 : 0.5 }}
+            <button onClick={() => {
+                const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!
+                const redirectUri = `${window.location.origin}/api/auth/callback`
+                const params = new URLSearchParams({
+                  client_id: clientId,
+                  redirect_uri: redirectUri,
+                  response_type: 'code',
+                  scope: 'openid email profile',
+                  access_type: 'online',
+                  prompt: 'consent',
+                })
+                window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
+              }}
+              style={btnStyle}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(255,255,255,0.15)' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
             >
@@ -146,7 +156,7 @@ export default function AdminLogin() {
                 <path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z"/>
               </svg>
               Sign in with Google
-            </a>
+            </button>
           </>
         ) : (
           <form onSubmit={handleTotpSubmit}>
