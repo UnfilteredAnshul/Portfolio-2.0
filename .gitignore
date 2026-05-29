@@ -1,6 +1,5 @@
 node_modules/
 .next/
-.next/
 .env
 .env.local
 .env.development.local
@@ -23,6 +22,9 @@ coverage/
 *.user
 *.userosscache
 *.suo
+tsconfig.tsbuildinfo
+next-env.d.ts
+npm-cache/
 
 # Python
 venv/
@@ -40,3 +42,12 @@ Thumbs.db
 
 # vscode
 .vscode/
+
+# Service account keys
+project-media-*.json
+
+# OAuth client JSON files
+client_secret_*.json
+
+# Uploads
+public/uploads/*
