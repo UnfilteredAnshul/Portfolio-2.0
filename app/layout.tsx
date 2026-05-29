@@ -2,6 +2,7 @@ import './globals.css'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import Footer from '../components/Footer'
 import { siteConfig, jsonLdPerson, jsonLdOrganization, jsonLdWebsite } from '../lib/seo'
 import { ProjectsProvider } from '../lib/projects-context'
@@ -89,6 +90,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Footer />
         </ProjectsProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
