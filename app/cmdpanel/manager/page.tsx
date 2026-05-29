@@ -811,7 +811,7 @@ export default function AdminProjects() {
   const removeUploadedFile = (index: number) => {
     const file = uploadedFiles[index]
     if (!file) return
-    if (file.fileId && pendingDeletions.current.has(file.fileId)) {
+    if (file.fileId) {
       pendingDeletions.current.delete(file.fileId)
       fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: file.fileId }) })
         .catch(() => {})
@@ -1080,7 +1080,7 @@ export default function AdminProjects() {
 
   const clearForm = () => {
     uploadedFiles.forEach((f) => {
-      if (f.fileId && pendingDeletions.current.has(f.fileId)) {
+      if (f.fileId) {
         pendingDeletions.current.delete(f.fileId)
         fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: f.fileId }) })
           .catch(() => {})
@@ -1460,8 +1460,8 @@ export default function AdminProjects() {
                             border: i === activeMediaIdx ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
                             borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s',
                           }}>
-                          {file.type?.startsWith('image/') || file.thumbnail ? (
-                            <img src={file.thumbnail || (file.url?.replace('sz=w2000', 'sz=w100') || file.url)} alt={file.name}
+                          {(file.type?.startsWith('image/') || file.thumbnail || file.fileId || file.url?.match(/[?&]id=([^&]+)/)) ? (
+                            <img src={file.thumbnail || (file.fileId ? `https://drive.google.com/thumbnail?id=${file.fileId}&sz=w100` : file.url)} alt={file.name}
                               style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover', flexShrink: 0, background: '#111' }}
                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3' }} />
                           ) : (

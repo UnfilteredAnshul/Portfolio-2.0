@@ -35,18 +35,31 @@ interface UploadedFile {
 
 function FilmstripThumbnail({ file }: { file: UploadedFile }) {
   const isVideo = file.type === 'video/mp4' || file.type === 'video' || file.type?.startsWith('video/')
-  const thumbSrc = file.thumbnail || (file.url?.replace('sz=w2000', 'sz=w100') || file.url)
+  const fileId = file.fileId || file.url?.match(/[?&]id=([^&]+)/)?.[1] || ''
+  const [imgError, setImgError] = useState(false)
+  const [imgLoaded, setImgLoaded] = useState(false)
+
+  let imgSrc = ''
+  if (isVideo && file.thumbnail) imgSrc = file.thumbnail
+  else if (fileId) imgSrc = `https://drive.google.com/thumbnail?id=${fileId}&sz=w100`
 
   return (
     <div style={{
       position: 'relative', width: 34, height: 26, borderRadius: '4px',
-      overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.08)',
+      overflow: 'hidden', flexShrink: 0, background: imgLoaded ? 'transparent' : 'rgba(255,255,255,0.08)',
     }}>
-      <img src={thumbSrc} alt=""
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.2' }} />
+      {imgSrc && !imgError ? (
+        <img src={imgSrc} alt=""
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgError(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)' }}>
+          {isVideo ? '▶' : '■'}
+        </div>
+      )}
       {isVideo && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{
             width: 14, height: 14, borderRadius: '50%', background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
