@@ -776,15 +776,20 @@ export default function AdminProjects() {
           } else {
             try {
               const err = JSON.parse(xhr.responseText)
-              setUploadError('Something went wrong')
-            } catch { setUploadError('Something went wrong') }
+              console.error('Upload error response:', err)
+              setUploadError(err?.error || `Upload failed (${xhr.status})`)
+            } catch {
+              console.error('Upload failed:', xhr.status, xhr.responseText?.slice(0, 200))
+              setUploadError(`Upload failed (${xhr.status})`)
+            }
           }
           progressMap.current.delete(uploadId)
           activeUploads.current--
           updateProgressDisplay()
         }
         xhr.onerror = () => {
-          setUploadError('Something went wrong')
+          console.error('Upload XHR error')
+          setUploadError('Network error — check console')
           progressMap.current.delete(uploadId)
           activeUploads.current--
           updateProgressDisplay()
@@ -794,7 +799,8 @@ export default function AdminProjects() {
         xhr.send(body)
       }
       reader.onerror = () => {
-        setUploadError('Something went wrong')
+        console.error('FileReader error')
+        setUploadError('Failed to read file')
         activeUploads.current--
         updateProgressDisplay()
       }
@@ -955,7 +961,8 @@ export default function AdminProjects() {
       pendingDeletions.current.clear()
       window.dispatchEvent(new Event('projects-updated'))
     } catch (err: any) {
-      setSaveError('Something went wrong')
+      console.error('Save error:', err)
+      setSaveError(err?.message || 'Save failed')
     } finally {
       setSaving(false)
     }
