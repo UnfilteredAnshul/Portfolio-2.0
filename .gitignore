@@ -51,3 +51,6 @@ client_secret_*.json
 
 # Uploads
 public/uploads/*
+
+# Project notes & context
+.notes/
