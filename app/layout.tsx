@@ -1,6 +1,7 @@
 import './globals.css'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import Footer from '../components/Footer'
 import { siteConfig, jsonLdPerson, jsonLdOrganization, jsonLdWebsite } from '../lib/seo'
 import { ProjectsProvider } from '../lib/projects-context'
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {children}
           <Footer />
         </ProjectsProvider>
+        <Analytics />
       </body>
     </html>
   )
