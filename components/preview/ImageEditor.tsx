@@ -122,14 +122,19 @@ export function ImageEditor({ src, alt = '', style }: ImageEditorProps) {
           cursor: isDragging ? 'grabbing' : 'grab',
           position: 'relative',
         }}>
-        {!imageLoaded && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: imageLoaded ? 0 : 2,
+          background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none', transition: 'opacity 0.3s',
+          opacity: imageLoaded ? 0 : 1,
+        }}>
           <motion.div
             initial={{ opacity: 0.5 }}
-            animate={{ opacity: [0.3, 0.7, 0.3] }}
+            animate={{ opacity: [0.3, 0.8, 0.3] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ width: '80%', height: '80%', borderRadius: '8px', background: 'linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 100%)', backgroundSize: '200% 100%' }}
+            style={{ width: '60%', height: '60%', borderRadius: '8px', background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.03) 100%)', backgroundSize: '200% 200%' }}
           />
-        )}
+        </div>
         <img
           src={src}
           alt={alt}

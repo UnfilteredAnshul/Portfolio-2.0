@@ -67,6 +67,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
+        <style>{`
+          ::-webkit-scrollbar { width: 6px; height: 6px; }
+          ::-webkit-scrollbar-track { background: transparent; }
+          ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+          ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+          * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.12) transparent; }
+        `}</style>
         <ProjectsProvider>
           <header className="top-nav" aria-label="Main Navigation">
             <nav className="topnav-inner">

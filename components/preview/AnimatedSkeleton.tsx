@@ -19,7 +19,7 @@ export function AnimatedSkeleton({ width = '100%', height = '100%', borderRadius
         width,
         height,
         borderRadius,
-        background: 'linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 100%)',
+        background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.06) 100%)',
         backgroundSize: '200% 100%',
         ...style,
       }}

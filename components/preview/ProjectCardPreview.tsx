@@ -16,6 +16,23 @@ interface DraftPreview {
   screenshots?: string[]
 }
 
+function CardVideoEmbed({ src }: { src: string }) {
+  const [loaded, setLoaded] = useState(false)
+  const fileId = src.match(/[?&]id=([^&]+)/)?.[1] || ''
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#111' }}>
+      {!loaded && <AnimatedSkeleton height="100%" borderRadius="0" />}
+      <iframe src={`https://drive.google.com/file/d/${fileId}/preview`}
+        onLoad={() => setLoaded(true)}
+        style={{
+          width: '100%', height: '100%', border: 'none', display: 'block',
+          position: 'absolute', inset: 0, opacity: loaded ? 1 : 0, zIndex: 1,
+        }}
+        allow="autoplay; encrypted-media" allowFullScreen />
+    </div>
+  )
+}
+
 export function ProjectCardPreview({ draft }: { draft: DraftPreview }) {
   const [hovered, setHovered] = useState(false)
   const { title, category, description, preview, date, pinned } = draft ?? {}
@@ -54,9 +71,7 @@ export function ProjectCardPreview({ draft }: { draft: DraftPreview }) {
       <div style={{ height: 220, background: '#111', overflow: 'hidden', position: 'relative' }}>
         {current ? (
           current.type === 'video' ? (
-            <iframe key={current.src} src={`https://drive.google.com/file/d/${current.src.match(/[?&]id=([^&]+)/)?.[1] || ''}/preview`}
-              style={{ width: '100%', height: '100%', border: 'none' }}
-              allow="autoplay; encrypted-media" allowFullScreen />
+              <CardVideoEmbed src={current.src} />
           ) : (
             <ImageEditor src={current.src} alt={title || ''} />
           )

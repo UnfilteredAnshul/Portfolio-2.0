@@ -33,6 +33,31 @@ interface UploadedFile {
   thumbnail?: string
 }
 
+function FilmstripThumbnail({ file }: { file: UploadedFile }) {
+  const isVideo = file.type === 'video/mp4' || file.type === 'video' || file.type?.startsWith('video/')
+  const thumbSrc = file.thumbnail || (file.url?.replace('sz=w2000', 'sz=w100') || file.url)
+
+  return (
+    <div style={{
+      position: 'relative', width: 34, height: 26, borderRadius: '4px',
+      overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.08)',
+    }}>
+      <img src={thumbSrc} alt=""
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.2' }} />
+      {isVideo && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{
+            width: 14, height: 14, borderRadius: '50%', background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.45rem', color: '#fff',
+          }}>▶</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function FilmstripItem({
   file, index, activeIndex, total, onPositionChange, onSelect,
 }: {
@@ -81,27 +106,24 @@ function FilmstripItem({
           textAlign: 'center', outline: 'none',
           MozAppearance: 'textfield', appearance: 'textfield',
         }} />
-      {file.type?.startsWith('video/') ? (
-        <div style={{
-          position: 'relative', width: 34, height: 26, borderRadius: '4px',
-          overflow: 'hidden', flexShrink: 0, background: 'rgba(255,255,255,0.08)',
-        }}>
-          {file.thumbnail ? (
-            <img src={file.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : null}
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{
-              width: 14, height: 14, borderRadius: '50%', background: 'rgba(0,0,0,0.6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.45rem', color: '#fff',
-            }}>▶</div>
-          </div>
-        </div>
-      ) : (
-        <img src={file.url} alt=""
-          style={{ width: 34, height: 26, borderRadius: '4px', objectFit: 'cover', flexShrink: 0, background: '#111' }}
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-      )}
+      <FilmstripThumbnail file={file} />
+    </div>
+  )
+}
+
+function VideoEmbed({ src }: { src: string }) {
+  const [loaded, setLoaded] = useState(false)
+  const fileId = src.match(/[?&]id=([^&]+)/)?.[1] || ''
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#111' }}>
+      {!loaded && <AnimatedSkeleton height="100%" borderRadius="0" />}
+      <iframe src={`https://drive.google.com/file/d/${fileId}/preview`}
+        onLoad={() => setLoaded(true)}
+        style={{
+          width: '100%', height: '100%', border: 'none', display: 'block',
+          position: 'absolute', inset: 0, opacity: loaded ? 1 : 0, zIndex: 1,
+        }}
+        allow="autoplay; encrypted-media" allowFullScreen />
     </div>
   )
 }
@@ -150,8 +172,9 @@ export function FullProjectPreview({ draft, uploadedFiles = [], onMediaReorder }
         const movedUrl = uploadedFiles[oldIdx].url
         onMediaReorder?.(next)
         const movedFile = next.find(f => f.url === movedUrl)
-        const imagesInNext = next.filter(f => !f.type?.startsWith('video/'))
-        if (movedFile?.type?.startsWith('video/')) {
+        const isVid = isVideoType(movedFile?.type)
+        const imagesInNext = next.filter(f => !isVideoType(f.type))
+        if (isVid) {
           setCurrentIndex(imagesInNext.length)
         } else {
           setCurrentIndex(imagesInNext.findIndex(f => f.url === movedUrl))
@@ -160,6 +183,8 @@ export function FullProjectPreview({ draft, uploadedFiles = [], onMediaReorder }
     }
     setActiveDragId(null)
   }, [uploadedFiles, onMediaReorder])
+
+  const isVideoType = useCallback((t: string | undefined) => t === 'video/mp4' || t === 'video' || t?.startsWith('video/'), [])
 
   const handlePositionChange = useCallback((index: number, newPos: number) => {
     const clamped = Math.max(1, Math.min(uploadedFiles.length, newPos))
@@ -197,17 +222,17 @@ export function FullProjectPreview({ draft, uploadedFiles = [], onMediaReorder }
       `}</style>
 
       <div style={{ flex: 2, overflow: 'hidden', position: 'relative', background: '#111', minHeight: 0 }}>
-        {current ? (
-          current.type === 'video' ? (
-            <iframe key={current.src} src={`https://drive.google.com/file/d/${current.src.match(/[?&]id=([^&]+)/)?.[1] || ''}/preview`}
-              style={{ width: '100%', height: '100%', border: 'none' }}
-              allow="autoplay; encrypted-media" allowFullScreen />
+          {current ? (
+            current.type === 'video' ? (
+              <VideoEmbed src={current.src} />
+            ) : (
+              <ImageEditor src={current.src} alt={title || ''} />
+            )
           ) : (
-            <ImageEditor src={current.src} alt={title || ''} />
-          )
-        ) : (
-          <AnimatedSkeleton height="100%" borderRadius="0" />
-        )}
+            <div style={{ width: '100%', height: '100%', background: '#111' }}>
+              <AnimatedSkeleton height="100%" borderRadius="0" />
+            </div>
+          )}
 
         {mediaItems.length > 1 && (
           <>
@@ -245,8 +270,9 @@ export function FullProjectPreview({ draft, uploadedFiles = [], onMediaReorder }
                 <FilmstripItem key={file.url} file={file} index={i} activeIndex={activeUploadedIndex} total={uploadedFiles.length}
                   onPositionChange={handlePositionChange}
                   onSelect={() => {
-                    const images = uploadedFiles.filter(f => !f.type?.startsWith('video/'))
-                    if (file.type?.startsWith('video/')) setCurrentIndex(images.length)
+                    const isVid = isVideoType(file.type)
+                    const images = uploadedFiles.filter(f => !isVideoType(f.type))
+                    if (isVid) setCurrentIndex(images.length)
                     else setCurrentIndex(images.findIndex(f => f.url === file.url))
                   }} />
               ))}

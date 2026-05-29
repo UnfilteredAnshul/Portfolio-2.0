@@ -1072,9 +1072,9 @@ export default function AdminProjects() {
     setEditingId(p.id)
     setErrors({})
     const files: typeof uploadedFiles = []
-    if (p.preview) files.push({ name: 'Preview', size: 0, url: p.preview, fileId: extractFileId(p.preview), type: 'image' })
-    if (p.screenshots) p.screenshots.forEach((s, i) => files.push({ name: `Screenshot ${i + 1}`, size: 0, url: s, fileId: extractFileId(s), type: 'image' }))
-    if (p.video) files.push({ name: 'Video', size: 0, url: p.video, fileId: extractFileId(p.video), type: 'video' })
+    if (p.preview) files.push({ name: 'Preview', size: 0, url: p.preview, fileId: extractFileId(p.preview), type: 'image/png' })
+    if (p.screenshots) p.screenshots.forEach((s, i) => files.push({ name: `Screenshot ${i + 1}`, size: 0, url: s, fileId: extractFileId(s), type: 'image/png' }))
+    if (p.video) files.push({ name: 'Video', size: 0, url: p.video, fileId: extractFileId(p.video), type: 'video/mp4' })
     setUploadedFiles(files)
   }
 
@@ -1461,9 +1461,9 @@ export default function AdminProjects() {
                             borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s',
                           }}>
                           {file.type?.startsWith('image/') || file.thumbnail ? (
-                            <img src={file.thumbnail || file.url} alt={file.name}
+                            <img src={file.thumbnail || (file.url?.replace('sz=w2000', 'sz=w100') || file.url)} alt={file.name}
                               style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover', flexShrink: 0, background: '#111' }}
-                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3' }} />
                           ) : (
                             <div style={{ width: 36, height: 36, borderRadius: '4px', background: 'rgba(255,255,255,0.05)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>
                               ▶
