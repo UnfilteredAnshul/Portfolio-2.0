@@ -132,7 +132,7 @@ export function ImageEditor({ src, alt = '', style }: ImageEditorProps) {
               initial={{ opacity: 0.5 }}
               animate={{ opacity: [0.3, 0.9, 0.3] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ width: '80%', height: '80%', borderRadius: '8px', background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.03) 100%)', backgroundSize: '200% 100%' }}
+              style={{ width: '80%', height: '80%', borderRadius: '8px', background: 'linear-gradient(90deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.02) 100%)', backgroundSize: '200% 100%' }}
             />
           </div>
         )}

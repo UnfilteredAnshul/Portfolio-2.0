@@ -1461,7 +1461,7 @@ export default function AdminProjects() {
                             borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s',
                           }}>
                           {(file.type?.startsWith('image/') || file.thumbnail || file.fileId || file.url?.match(/[?&]id=([^&]+)/)) ? (
-                            <img src={file.thumbnail || (file.fileId ? `https://drive.google.com/thumbnail?id=${file.fileId}&sz=w100` : file.url)} alt={file.name}
+                            <img src={file.thumbnail || (file.fileId ? `https://drive.google.com/thumbnail?id=${file.fileId}&sz=w200` : file.url)} alt={file.name}
                               style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover', flexShrink: 0, background: '#111' }}
                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3' }} />
                           ) : (

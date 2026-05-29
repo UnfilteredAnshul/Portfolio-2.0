@@ -41,7 +41,7 @@ function FilmstripThumbnail({ file }: { file: UploadedFile }) {
 
   let imgSrc = ''
   if (isVideo && file.thumbnail) imgSrc = file.thumbnail
-  else if (fileId) imgSrc = `https://drive.google.com/thumbnail?id=${fileId}&sz=w100`
+  else if (fileId) imgSrc = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`
 
   return (
     <div style={{
