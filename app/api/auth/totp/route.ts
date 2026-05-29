@@ -17,8 +17,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '2FA not configured' }, { status: 500 })
 
     const isValid = verify({ token: code, secret })
-    if (!isValid)
+    if (!isValid) {
+      console.error('TOTP: invalid code')
       return NextResponse.json({ error: 'Invalid code' }, { status: 401 })
+    }
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip')

@@ -115,9 +115,13 @@ export default function AdminLogin() {
       })
       const data = await res.json()
       if (data.success) router.push('/cmdpanel/manager?session=new')
-      else setError('Something went wrong')
-    } catch {
-      setError('Something went wrong')
+      else {
+        console.error('TOTP error:', data)
+        setError(data?.error || 'Verification failed')
+      }
+    } catch (err) {
+      console.error('TOTP fetch error:', err)
+      setError('Network error')
     } finally {
       setLoading(false)
     }

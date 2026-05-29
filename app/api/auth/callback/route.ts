@@ -33,8 +33,10 @@ export async function GET(request: NextRequest) {
     })
 
     const tokenData = await tokenRes.json()
-    if (!tokenRes.ok)
+    if (!tokenRes.ok) {
+      console.error('Token exchange error:', tokenData)
       return NextResponse.redirect(new URL('/cmdpanel/login?error=token_exchange', request.url))
+    }
 
     const idToken = tokenData.id_token
     if (!idToken)
@@ -43,8 +45,10 @@ export async function GET(request: NextRequest) {
     const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`)
     const data = await verifyRes.json()
 
-    if (!verifyRes.ok)
+    if (!verifyRes.ok) {
+      console.error('Token info error:', await verifyRes.text().catch(() => ''))
       return NextResponse.redirect(new URL('/cmdpanel/login?error=invalid_token', request.url))
+    }
 
     if (data.aud !== clientId)
       return NextResponse.redirect(new URL('/cmdpanel/login?error=audience', request.url))
@@ -73,7 +77,8 @@ export async function GET(request: NextRequest) {
       path: '/',
     })
     return response
-  } catch {
+  } catch (err) {
+    console.error('Callback error:', err)
     return NextResponse.redirect(new URL('/cmdpanel/login?error=server_error', request.url))
   }
 }
