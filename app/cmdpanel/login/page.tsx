@@ -97,6 +97,8 @@ export default function AdminLogin() {
         missing_code: 'Missing authorization code.',
         server_error: 'Server error. Try again.',
         access_denied: 'Access denied by Google.',
+        invalid_grant: 'Authorization expired or invalid. Try again.',
+        invalid_client: 'OAuth client ID or secret is wrong on the server.',
       }
       setError(messages[err] || `Error: ${err}`)
     }

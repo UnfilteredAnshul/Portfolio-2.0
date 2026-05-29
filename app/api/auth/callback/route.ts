@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
     if (!code)
       return NextResponse.redirect(new URL('/cmdpanel/login?error=missing_code', request.url))
 
-    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID
-    const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET
+    const signinClientId = process.env.GOOGLE_SIGNIN_CLIENT_ID
+    const signinClientSecret = process.env.GOOGLE_SIGNIN_CLIENT_SECRET
     const adminEmail = process.env.ADMIN_EMAIL
 
-    if (!clientId || !clientSecret || !adminEmail)
+    if (!signinClientId || !signinClientSecret || !adminEmail)
       return NextResponse.redirect(new URL('/cmdpanel/login?error=config', request.url))
 
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id: clientId,
-        client_secret: clientSecret,
+        client_id: signinClientId,
+        client_secret: signinClientSecret,
         redirect_uri: `${request.nextUrl.origin}/api/auth/callback`,
         grant_type: 'authorization_code',
       }),
@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenRes.json()
     if (!tokenRes.ok) {
       console.error('Token exchange error:', tokenData)
-      return NextResponse.redirect(new URL('/cmdpanel/login?error=token_exchange', request.url))
+      const googleErr = tokenData?.error || 'token_exchange'
+      return NextResponse.redirect(new URL(`/cmdpanel/login?error=${googleErr}`, request.url))
     }
 
     const idToken = tokenData.id_token
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/cmdpanel/login?error=invalid_token', request.url))
     }
 
-    if (data.aud !== clientId)
+    if (data.aud !== signinClientId)
       return NextResponse.redirect(new URL('/cmdpanel/login?error=audience', request.url))
 
     if (data.email_verified !== 'true' || data.email !== adminEmail)
