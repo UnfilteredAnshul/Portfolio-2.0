@@ -132,7 +132,7 @@ export default function ContactClient() {
                   Try again in {timeLeft}
                 </p>
                 <button
-                  onClick={() => setRateLimited(false)}
+                  onClick={() => { setRateLimited(false); formRef.current?.reset() }}
                   style={{
                     marginTop: '1.25rem',
                     padding: '0.6rem 2rem',

@@ -1,6 +1,5 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import raw from '../data/projects.json'
 
 export type Project = {
   id: string
@@ -14,8 +13,6 @@ export type Project = {
   date: string
   projectFolderId?: string
 }
-
-const data = raw as Project[]
 
 const PROJECTS_STORAGE_KEY = 'portfolio_projects'
 
@@ -31,14 +28,6 @@ function migrateCategories(projects: any[]): any[] {
   }))
 }
 
-function mergeSourceProjects(saved: Project[]): Project[] {
-  const seen = new Set<string>()
-  const deduped = saved.filter((p) => { const k = p.id; if (seen.has(k)) return false; seen.add(k); return true })
-  const savedIds = new Set(deduped.map((p) => p.id))
-  const missing = (data as Project[]).filter((p) => !savedIds.has(p.id))
-  return missing.length ? [...missing, ...deduped] : deduped
-}
-
 interface ProjectsContextType {
   projects: Project[]
   refresh: () => void
@@ -47,27 +36,31 @@ interface ProjectsContextType {
 const ProjectsContext = createContext<ProjectsContextType>({ projects: [], refresh: () => {} })
 
 export function ProjectsProvider({ children }: { children: React.ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(PROJECTS_STORAGE_KEY)
-        if (saved) return mergeSourceProjects(migrateCategories(JSON.parse(saved)) as Project[])
-      } catch { /* ignore */ }
-    }
-    return data as Project[]
-  })
+  const [projects, setProjects] = useState<Project[]>([])
 
   const refresh = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(PROJECTS_STORAGE_KEY)
-        if (saved) {
-          setProjects(mergeSourceProjects(migrateCategories(JSON.parse(saved)) as Project[]))
+    fetch('/api/projects')
+      .then((res) => res.json())
+      .then((apiData) => {
+        if (Array.isArray(apiData) && apiData.length > 0) {
+          setProjects(migrateCategories(apiData) as Project[])
+          try { localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(apiData)) } catch {}
           return
         }
-      } catch { /* ignore */ }
-    }
-    setProjects(data as Project[])
+        throw new Error('empty')
+      })
+      .catch(() => {
+        if (typeof window !== 'undefined') {
+          try {
+            const saved = localStorage.getItem(PROJECTS_STORAGE_KEY)
+            if (saved) {
+              setProjects(migrateCategories(JSON.parse(saved)) as Project[])
+              return
+            }
+          } catch {}
+        }
+        setProjects([])
+      })
   }, [])
 
   useEffect(() => {

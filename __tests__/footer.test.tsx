@@ -29,7 +29,7 @@ describe('Footer', () => {
   it('has correct href for YouTube', () => {
     render(<Footer />)
     const link = screen.getByLabelText('YouTube')
-    expect(link).toHaveAttribute('href', 'https://yt.openinapp.co/5exylink')
+    expect(link).toHaveAttribute('href', 'https://yt.openinapp.co/sexylink')
   })
 
   it('has correct href for LinkedIn', () => {

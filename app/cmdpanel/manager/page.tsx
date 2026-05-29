@@ -929,15 +929,19 @@ export default function AdminProjects() {
         newFolderId = orgResult.projectFolderId
       }
 
+      let savedProject: Project | null = null
       setProjects((prev) => {
         let next: Project[]
         const exists = prev.find((p) => p.id === draft.id)
 
         if (exists) {
           next = prev.map((p) => (p.id === draft.id ? { ...(p as any), ...draft, projectFolderId: newFolderId || p.projectFolderId } as Project : p))
+          savedProject = next.find((p) => p.id === draft.id) ?? null
         } else {
           const newId = draft.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
-          next = [{ ...(draft as Project), id: newId, projectFolderId: newFolderId }, ...prev]
+          const created = { ...(draft as Project), id: newId, projectFolderId: newFolderId }
+          savedProject = created
+          next = [created, ...prev]
         }
 
         if (draft.pinned) {
@@ -955,6 +959,13 @@ export default function AdminProjects() {
         const unpinned = next.filter((p) => !p.pinned)
         return [...pinned, ...unpinned] as Project[]
       })
+      if (savedProject) {
+        fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(savedProject),
+        }).catch((e) => console.error('Supabase sync error:', e))
+      }
       setDraft(null)
       setEditingId(null)
       setErrors({})
@@ -1049,6 +1060,11 @@ export default function AdminProjects() {
     setProjects((prev) => prev.filter((p) => p.id !== id))
     if (editingId === id) { setEditingId(null); setDraft(null) }
     setShowDeleteConfirm(null)
+    fetch('/api/projects', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    }).catch((e) => console.error('Supabase delete sync error:', e))
     window.dispatchEvent(new Event('projects-updated'))
   }
 

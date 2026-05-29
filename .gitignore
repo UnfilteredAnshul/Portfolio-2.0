@@ -54,3 +54,6 @@ public/uploads/*
 
 # Project notes & context
 .notes/
+
+# Vercel env import (secrets)
+.env.vercel

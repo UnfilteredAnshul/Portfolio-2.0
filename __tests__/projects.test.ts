@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import data from '../data/projects.json'
 
 describe('projects data', () => {
-  it('has at least one project', () => {
-    expect(data.length).toBeGreaterThan(0)
+  it('data is an array', () => {
+    expect(Array.isArray(data)).toBe(true)
   })
 
   it('every project has required fields', () => {

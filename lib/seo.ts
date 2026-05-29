@@ -6,7 +6,7 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_SITE_URL || 'https://buildiwithanshul.vercel.app',
   locale: 'en_US',
   twitterHandle: '@anshulrajpal',
-  ogImage: '/og-image.jpg',
+  ogImage: '/og-image.svg',
   email: 'contact.unfiltered.anshul@gmail.com',
   telephone: '+919322309947',
   address: {
