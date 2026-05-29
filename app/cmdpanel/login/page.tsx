@@ -141,7 +141,7 @@ export default function AdminLogin() {
                   response_type: 'code',
                   scope: 'openid email profile',
                   access_type: 'online',
-                  prompt: 'consent',
+                  prompt: 'select_account',
                 })
                 window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
               }}
