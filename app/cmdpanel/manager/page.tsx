@@ -969,6 +969,8 @@ export default function AdminProjects() {
       setDraft(null)
       setEditingId(null)
       setErrors({})
+      setUploadedFiles([])
+      setActiveMediaIdx(0)
       pendingDeletions.current.clear()
       window.dispatchEvent(new Event('projects-updated'))
     } catch (err: any) {
@@ -1095,13 +1097,15 @@ export default function AdminProjects() {
   }
 
   const clearForm = () => {
-    uploadedFiles.forEach((f) => {
-      if (f.fileId) {
-        pendingDeletions.current.delete(f.fileId)
-        fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: f.fileId }) })
-          .catch(() => {})
-      }
-    })
+    if (!editingId) {
+      uploadedFiles.forEach((f) => {
+        if (f.fileId) {
+          pendingDeletions.current.delete(f.fileId)
+          fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: f.fileId }) })
+            .catch(() => {})
+        }
+      })
+    }
     setDraft(null)
     setEditingId(null)
     setErrors({})
@@ -1291,7 +1295,12 @@ export default function AdminProjects() {
               padding: '2rem'
             }}
           >
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {editingId && (
+                <button onClick={clearForm} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '1rem', padding: 0, lineHeight: 1 }}>
+                  ← Back
+                </button>
+              )}
               {editingId ? 'Edit Project' : 'Add New Project'}
             </h2>
 
@@ -1560,7 +1569,7 @@ export default function AdminProjects() {
                       fontSize: '0.9rem'
                     }}
                   >
-                    Clear
+                    {editingId ? 'Cancel' : 'Clear'}
                   </motion.button>
                 )}
               </div>
