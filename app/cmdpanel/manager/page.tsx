@@ -3,14 +3,12 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { SortableList, SortableItem, SortableOverlay, DragHandle } from '../../../components/SortableList'
-import raw from '../../../data/projects.json'
 import Hero3D from '../../../components/Hero3D'
 import { useCategories, saveCategories } from '../../../lib/use-categories'
 import { formatDate, stripHtml, MONTH_NAMES } from '../../../lib/format-date'
 import { FullProjectPreview } from '../../../components/preview/FullProjectPreview'
 import { ProjectCardPreview } from '../../../components/preview/ProjectCardPreview'
 
-const data = raw as Project[]
 type Project = {
   id: string
   title: string
@@ -101,27 +99,18 @@ function captureVideoFrame(videoUrl: string): Promise<string> {
   })
 }
 
-function mergeSourceProjects(saved: Project[]): Project[] {
-  const seen = new Set<string>()
-  const deduped = saved.filter((p) => { const k = p.id; if (seen.has(k)) return false; seen.add(k); return true })
-  const savedIds = new Set(deduped.map((p) => p.id))
-  const missing = (data as Project[]).filter((p) => !savedIds.has(p.id))
-  return missing.length ? [...missing, ...deduped] : deduped
-}
-
 function useLocalProjects() {
-  const [projects, setProjects] = useState<Project[]>(data as Project[])
+  const [projects, setProjects] = useState<Project[]>([])
   useEffect(() => {
-    const saved = localStorage.getItem('portfolio_projects')
-    if (saved) {
-      try {
-        setProjects(mergeSourceProjects(JSON.parse(saved) as Project[]))
-      } catch { /* ignore */ }
-    }
+    fetch('/api/projects')
+      .then((res) => res.json())
+      .then((apiData) => {
+        if (Array.isArray(apiData)) {
+          setProjects(apiData as Project[])
+        }
+      })
+      .catch(() => {})
   }, [])
-  useEffect(() => {
-    localStorage.setItem('portfolio_projects', JSON.stringify(projects))
-  }, [projects])
   return [projects, setProjects] as const
 }
 
@@ -166,7 +155,7 @@ function ProjectRow({ p, editingId, startEdit, showDeleteConfirm, setShowDeleteC
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
             <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{p.title}</span>
             {p.pinned && (
-              <span style={{ padding: '2px 8px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase' }}>Pinned</span>
+              <span style={{ fontSize: '0.8rem', lineHeight: 1 }}>📌</span>
             )}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -175,37 +164,37 @@ function ProjectRow({ p, editingId, startEdit, showDeleteConfirm, setShowDeleteC
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
         <motion.button
           onClick={() => p.pinned ? unpinProject(p.id) : pinProject(p.id)}
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          style={{ padding: '8px 16px', background: 'rgba(255, 255, 255, 0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-          {p.pinned ? 'Unpin' : 'Pin'}
+          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
+          style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', lineHeight: 1 }}>
+          {p.pinned ? '📍' : '📌'}
         </motion.button>
         <motion.button onClick={() => startEdit(p)}
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          style={{ padding: '8px 16px', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-          Edit
+          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
+          style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.1)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', lineHeight: 1 }}>
+          ✏️
         </motion.button>
 
         {showDeleteConfirm === p.id ? (
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.35rem' }}>
             <motion.button onClick={() => remove(p.id)}
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              style={{ padding: '8px 16px', background: '#ff4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+              style={{ padding: '8px 12px', background: '#ff4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600 }}>
               Confirm
             </motion.button>
             <motion.button onClick={() => setShowDeleteConfirm(null)}
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              style={{ padding: '8px 16px', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+              style={{ padding: '8px 12px', background: 'rgba(255, 255, 255, 0.1)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600 }}>
               Cancel
             </motion.button>
           </div>
         ) : (
           <motion.button onClick={() => setShowDeleteConfirm(p.id)}
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            style={{ padding: '8px 16px', background: 'rgba(255, 68, 68, 0.2)', color: '#ff4444', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-            Delete
+            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
+            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 68, 68, 0.2)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', lineHeight: 1 }}>
+            🗑️
           </motion.button>
         )}
       </div>
@@ -1285,6 +1274,13 @@ export default function AdminProjects() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
           {/* ──── Form ──── */}
+          {editingId && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <button onClick={clearForm} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: '0.8rem', padding: 0, lineHeight: 1 }}>
+                ← Back to All Projects
+              </button>
+            </div>
+          )}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1295,12 +1291,7 @@ export default function AdminProjects() {
               padding: '2rem'
             }}
           >
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              {editingId && (
-                <button onClick={clearForm} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '1rem', padding: 0, lineHeight: 1 }}>
-                  ← Back
-                </button>
-              )}
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
               {editingId ? 'Edit Project' : 'Add New Project'}
             </h2>
 
