@@ -131,7 +131,7 @@ function errorBorder(field: string, errors: Record<string, string>) {
 }
 
 /* ───────────── ProjectRow ───────────── */
-function ProjectRow({ p, editingId, startEdit, showDeleteConfirm, setShowDeleteConfirm, remove, pinProject, unpinProject }: {
+function ProjectRow({ p, editingId, startEdit, showDeleteConfirm, setShowDeleteConfirm, remove, pinProject, unpinProject, hasMissingMedia }: {
   p: Project
   editingId: string | null
   startEdit: (p: Project) => void
@@ -140,6 +140,7 @@ function ProjectRow({ p, editingId, startEdit, showDeleteConfirm, setShowDeleteC
   remove: (id: string) => void
   pinProject: (id: string) => void
   unpinProject: (id: string) => void
+  hasMissingMedia?: boolean
 }) {
   return (
     <div style={{
@@ -156,6 +157,9 @@ function ProjectRow({ p, editingId, startEdit, showDeleteConfirm, setShowDeleteC
             <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{p.title}</span>
             {p.pinned && (
               <span style={{ fontSize: '0.8rem', lineHeight: 1 }}>📌</span>
+            )}
+            {hasMissingMedia && (
+              <span style={{ fontSize: '0.8rem', lineHeight: 1, color: '#ff4444', fontWeight: 700 }} title="Missing media">⚠</span>
             )}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -598,9 +602,14 @@ export default function AdminProjects() {
   const [activeMediaIdx, setActiveMediaIdx] = useState(0)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
   const [driveTokenBad, setDriveTokenBad] = useState(false)
+  const [missingMediaProjects, setMissingMediaProjects] = useState<Set<string>>(new Set())
+  const [listOverflows, setListOverflows] = useState(false)
+  const [formHeight, setFormHeight] = useState<number>(0)
   const hasSynced = useRef(false)
   const pendingDeletions = useRef<Set<string>>(new Set())
   const progressMap = useRef<Map<string, {loaded: number; total: number}>>(new Map())
+  const formRef = useRef<HTMLDivElement>(null)
+  const listWrapRef = useRef<HTMLDivElement>(null)
 
   const updateProgressDisplay = () => {
     const entries = [...progressMap.current.values()]
@@ -657,22 +666,28 @@ export default function AdminProjects() {
       .then((res) => res.json())
       .then((data) => {
         if (data.missing?.length > 0) {
-          setProjects((prev) =>
-            prev.map((p) => {
-              const next = { ...p } as any
-              const pid = extractFileId(next.preview || '')
-              if (pid && data.missing.includes(pid)) delete next.preview
-              if (next.screenshots) {
-                next.screenshots = next.screenshots.filter(
-                  (s: string) => !(extractFileId(s) && data.missing.includes(extractFileId(s)))
-                )
-                if (!next.screenshots.length) delete next.screenshots
+          const missingSet = new Set<string>(data.missing as string[])
+          setProjects((prev) => {
+            const affected = new Set<string>()
+            const next = prev.map((p) => {
+              const np = { ...p } as any
+              const pid = extractFileId(np.preview || '')
+              if (pid && missingSet.has(pid)) { delete np.preview; affected.add(p.id) }
+              if (np.screenshots) {
+                np.screenshots = np.screenshots.filter((s: string) => {
+                  const sid = extractFileId(s)
+                  if (sid && missingSet.has(sid)) { affected.add(p.id); return false }
+                  return true
+                })
+                if (!np.screenshots.length) delete np.screenshots
               }
-              const vid = extractFileId(next.video || '')
-              if (vid && data.missing.includes(vid)) delete next.video
-              return next as Project
+              const vid = extractFileId(np.video || '')
+              if (vid && missingSet.has(vid)) { delete np.video; affected.add(p.id) }
+              return np as Project
             })
-          )
+            setMissingMediaProjects((prev) => new Set([...prev, ...affected]))
+            return next
+          })
           setSyncMessage(`${data.missing.length} media file(s) were missing from Drive and have been removed.`)
           setTimeout(() => setSyncMessage(null), 8000)
         }
@@ -688,6 +703,33 @@ export default function AdminProjects() {
       body: JSON.stringify({ fileIds: [] }),
     }).catch(() => setDriveTokenBad(true))
   }, [])
+
+  useEffect(() => {
+    setMissingMediaProjects((prev) => {
+      const next = new Set(prev)
+      projects.forEach((p) => {
+        const hasMedia = !!(p.preview || (p.screenshots && p.screenshots.length > 0) || p.video)
+        if (!hasMedia) next.add(p.id)
+      })
+      return next
+    })
+  }, [projects])
+
+  useEffect(() => {
+    const form = formRef.current
+    const list = listWrapRef.current
+    if (!form || !list) return
+    const check = () => {
+      const fh = form.offsetHeight
+      setFormHeight(fh)
+      requestAnimationFrame(() => setListOverflows(list.scrollHeight > fh))
+    }
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(form)
+    ro.observe(list)
+    return () => ro.disconnect()
+  }, [projects, showAll])
 
   const clearField = (field: string) => {
     setDraft((d) => {
@@ -862,8 +904,6 @@ export default function AdminProjects() {
     )
     return [...pinned, ...notPinned]
   }, [projects, customOrder])
-
-  const visible = showAll ? displayProjects : displayProjects.filter((p) => p.pinned)
 
   const handleReorder = (activeId: string, overId: string) => {
     setCustomOrder(true)
@@ -1136,7 +1176,7 @@ export default function AdminProjects() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {displayProjects.map((p) => (
               <SortableItem key={p.id} id={p.id}>
-                <ProjectRow p={p} editingId={editingId} startEdit={startEdit} showDeleteConfirm={showDeleteConfirm} setShowDeleteConfirm={setShowDeleteConfirm} remove={remove} pinProject={pinProject} unpinProject={unpinProject} />
+                <ProjectRow p={p} editingId={editingId} startEdit={startEdit} showDeleteConfirm={showDeleteConfirm} setShowDeleteConfirm={setShowDeleteConfirm} remove={remove} pinProject={pinProject} unpinProject={unpinProject} hasMissingMedia={missingMediaProjects.has(p.id)} />
               </SortableItem>
             ))}
           </div>
@@ -1157,9 +1197,9 @@ export default function AdminProjects() {
           </SortableOverlay>
         </SortableList>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {visible.map((p) => (
-            <ProjectRow key={p.id} p={p} editingId={editingId} startEdit={startEdit} showDeleteConfirm={showDeleteConfirm} setShowDeleteConfirm={setShowDeleteConfirm} remove={remove} pinProject={pinProject} unpinProject={unpinProject} />
+        <div ref={listWrapRef} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: !showAll && listOverflows ? `${Math.max(formHeight - 170, 200)}px` : 'none', overflow: 'hidden' }}>
+          {displayProjects.map((p) => (
+            <ProjectRow key={p.id} p={p} editingId={editingId} startEdit={startEdit} showDeleteConfirm={showDeleteConfirm} setShowDeleteConfirm={setShowDeleteConfirm} remove={remove} pinProject={pinProject} unpinProject={unpinProject} hasMissingMedia={missingMediaProjects.has(p.id)} />
           ))}
         </div>
       )}
@@ -1170,10 +1210,10 @@ export default function AdminProjects() {
         </p>
       )}
 
-      {displayProjects.some((p) => !p.pinned) && (
+      {listOverflows && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', marginTop: '1.5rem' }}>
           <motion.button onClick={() => setShowAll(!showAll)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            style={{ padding: '12px 32px', background: 'transparent', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.3)', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>
+            style={{ padding: '8px 24px', background: 'transparent', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.3)', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>
             {showAll ? 'Show Less' : 'Show More'}
           </motion.button>
         </motion.div>
@@ -1282,6 +1322,7 @@ export default function AdminProjects() {
             </div>
           )}
           <motion.div
+            ref={formRef}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             style={{
